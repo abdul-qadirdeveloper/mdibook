@@ -1,5 +1,5 @@
 # Intent: MediBook appointment booking for small clinics
-Author: Abdul Qadir (Product Owner). Status: draft.
+Author: Abdul Qadir (Product Owner). Status: accepted.
 
 ## Problem
 Today small clinics manage doctor appointments with phone calls and a shared spreadsheet. This

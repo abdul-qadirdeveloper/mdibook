@@ -1,5 +1,5 @@
 # Intent: Doctor schedule management
-Author: Abdul Qadir (Product Owner). Status: draft.
+Author: Abdul Qadir (Product Owner). Status: accepted.
 
 ## Problem
 Clinics keep doctor schedules in a shared spreadsheet and by phone. Doctors and staff have no
