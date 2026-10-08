@@ -33,10 +33,12 @@ the schedules of their own clinic's doctors.
 - The notification stub records only the event type and opaque identifiers.
 - Times are stored in UTC and shown in the clinic's time zone, including to patients in
   another time zone.
-- Patients can cancel or reschedule up to 24 hours before the appointment, and can hold at
-  most 3 upcoming appointments per clinic. Both values are configurable per clinic.
-- Patients can never overbook a slot. Staff can knowingly add an extra booking to a slot for
-  their own clinic's doctors.
+- Patients can reschedule up to 24 hours before the appointment. They can cancel at any time
+  before it; a cancellation inside the last 24 hours is allowed but recorded as a late cancel.
+- Patients can hold at most 3 upcoming appointments per clinic. The 24 hours and the limit of 3
+  are configurable per clinic.
+- No one can overbook a slot, including staff. A slot can be booked again only if the existing
+  booking is cancelled.
 - Location search matches city or area text, not distance.
 - The interface is English only.
 - Finish line: a working v1 that meets the two success criteria, with no fixed date.

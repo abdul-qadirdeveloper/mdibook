@@ -13,6 +13,8 @@ are seeing a doctor, is sensitive.
    clinical notes in application logs, error messages, or analytics. Log opaque IDs only.
 3. Audit: every state-changing action emits an audit event with actor id, actor role, action,
    entity type, entity id, clinic id and UTC timestamp. Audit events hold IDs, never payloads.
+   Clinic id is left empty only for an action that belongs to no clinic, such as a patient
+   changing their own account.
 4. Notifications: contain the least needed to act. Do not include the doctor's specialty or the
    visit reason. Link to the signed-in app for details.
 5. Free text is a risk: prefer fixed lists to free-text fields where staff or doctors record
