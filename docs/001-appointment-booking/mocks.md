@@ -1,6 +1,6 @@
 # Mocks: patient booking flow
 
-- Intent: [001 MediBook appointment booking](../../intent/001-medibook-appointment-booking.md)
+- Intent: [001 MediBook appointment booking](../../intent/001-appointment-booking.md)
 - Claude Design artifact: https://claude.ai/artifact/8KMXKDeSMfDAxzJs332534
 - Date: 2026-10-08
 - status: approved
