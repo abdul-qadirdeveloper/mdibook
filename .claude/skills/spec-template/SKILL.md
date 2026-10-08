@@ -30,7 +30,7 @@ File: docs/<intent-slug>/spec.md. The first lines, in this order:
 
 ## Rules
 - Each requirement is testable and ends with its source, for example (intent 001, Constraints).
-- Behavior only. No application code, and no technology beyond the stack in CLAUDE.md.
+- Behavior only. No application code, and no technology beyond the stack named in the intents or the Summary (TypeScript, Next.js, PostgreSQL with Prisma, Vitest, Playwright).
 - Every open question in every cited intent is either answered in a requirement or carried
   forward by name under Flagged concerns.
 - Apply healthcare-privacy, appointment-domain-rules and ux-standards. Where two rules
