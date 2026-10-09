@@ -21,3 +21,4 @@ are seeing a doctor, is sensitive.
    reasons. If free text is unavoidable, say who can read it.
 6. If a requirement conflicts with these rules, flag it. Do not silently pick one.
 7. Never claim the system is compliant with any regulation.
+8. A hook blocks log statements that mention patient-data field names. If you are blocked, log the opaque id instead. Do not rephrase the statement to get around the hook.

@@ -13,6 +13,7 @@ else
   text=$(printf '%s' "$input" | jq -r '.tool_input.content // empty')
 fi
 
+target="${target//\\//}"; root="${root//\\//}"   # Windows: backslashes -> slashes
 case "$target" in
   docs/*/spec.md|*/docs/*/spec.md) ;;
   *) exit 0 ;;                       # not a spec file: nothing to check
