@@ -2,4 +2,9 @@ node_modules/
 .next/
 .env
 .env.*
-! .env.example
+!.env.example
+.claude/hook-events.log
+.claude/worktrees/
+next-env.d.ts
+*.tsbuildinfo
+/generated/
