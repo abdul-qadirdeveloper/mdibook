@@ -1,7 +1,14 @@
-.PHONY: db run test build lint
+.PHONY: db migrate seed run test build lint
 
 db:
 	docker compose up -d db
+
+migrate:
+	npx prisma migrate deploy
+	npx prisma generate
+
+seed:
+	node prisma/seed.ts
 
 run:
 	npm run dev

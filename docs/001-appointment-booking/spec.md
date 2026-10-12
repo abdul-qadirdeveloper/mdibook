@@ -2,7 +2,7 @@
 Intent: intent/001-appointment-booking.md, intent/002-doctor-schedule-management.md  
 Mocks: docs/001-appointment-booking/mocks.md (status: approved)  
 Skills in force (tree hash of .claude/skills): 3a54982  
-Date: 2026-10-09. Status: draft
+Date: 2026-10-09. Status: approved
 
 ## 1. Summary
 

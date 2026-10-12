@@ -1,7 +1,36 @@
 # MediBook MVP implementation plan
 Spec: docs/001-appointment-booking/spec.md  
 Mocks: docs/001-appointment-booking/mocks.md (status: approved)  
-Date: 2026-10-12. Status: approved
+Date: 2026-10-12. Status: approved. Amended 2026-10-12 (see Amendments)
+
+## Amendments
+
+Changes made to this plan while Stream 0 was built, each in the same commit as the code.
+
+1. **Double booking is prevented by a partial unique index, not an exclusion constraint.**
+   Decided by the Product Owner, 2026-10-12. The index
+   `Appointment_one_active_per_doctor_start` allows at most one active (requested or confirmed)
+   appointment per doctor and start time. There is no `btree_gist` extension and no exclusion
+   constraint. The exclusion constraint is recorded under Options rejected. What this leaves to
+   the application is in Risks 3.
+2. **The tenant-consistency keys are declared in `prisma/schema.prisma`,** so they are in the
+   generated migration, not the hand-written one. Prisma sees foreign keys; one it did not know
+   would be dropped by the next generated migration (Risks 8).
+3. **Database sessions are pinned to UTC,** in the hand-written migration and in
+   `src/lib/db.ts`. Prisma's PostgreSQL adapter reads and writes timestamps as if the session
+   zone were UTC; on a server with another default zone every stored instant was shifted by
+   that zone's offset. Found by `constraints.test.ts` (R67).
+4. **Small additions to the file list:** `.gitignore` (Playwright output), a `postinstall`
+   script in `package.json` that generates the Prisma client, `allowImportingTsExtensions` in
+   `tsconfig.json` so `make seed` runs `prisma/seed.ts` with plain Node, and two components the
+   stand-in session needs (the site header and the development user chooser, both in
+   `src/components/`).
+5. **The home page holds a development user chooser.** The stand-in session reads a header,
+   which a browser cannot set on its own, so `src/app/page.tsx` lets a developer choose a seeded
+   user. It is not the sign-in screen of R91 and does not work in production.
+6. **The fixed list for staff and doctor cancellations (R41) is chosen here,** because the spec
+   requires a list and gives none: patient request, doctor unavailable, booked in error, clinic
+   closure, other. Product Owner should confirm.
 
 ## Context
 
@@ -13,8 +42,8 @@ streams (A: patient, B: doctor and staff) then run in parallel without touching 
 
 Things found while reading that shape the plan:
 
-- **The spec says `Status: draft`.** Only the Product Owner may set it to approved. Build should
-  not start until that is done.
+- **The spec said `Status: draft`.** The Product Owner set it to approved on 2026-10-12, before
+  Stream 0 was built.
 - **Scope of this plan is the three streams as requested.** Real sign-in, password reset and the
   admin role (R93 to R103, and the sign-in half of R1, R10, R98) are in no stream. They are
   deferred; a seed script stands in for the admin. See Risks 1.
@@ -43,6 +72,7 @@ Project and config:
 - `eslint.config.mjs` (forbid database imports in `src/domain/`, forbid `console.*` in `src/`)
 - `Makefile` (add `migrate` and `seed`; `test` unchanged)
 - `.env.example` (add the test database URL)
+- `.gitignore` (ignore Playwright output)
 - `vitest.config.ts` (new: unit project and a serial integration project)
 - `playwright.config.ts` (new)
 - `app/.gitkeep` (delete; `app/` is replaced by `src/app/`)
@@ -52,10 +82,10 @@ Data model and migrations:
 - `prisma/schema.prisma` (all entities in spec section 3 except PasswordResetToken and
   credentials, plus two additions: an idempotency key on Appointment, and a staff lookup log for
   the R92 rate limit)
-- `prisma/migrations/` (new directory; migration 1 is generated tables; migration 2 is hand-written
-  SQL: `btree_gist`, the exclusion constraint on doctor and time range for active appointments,
-  end-after-start checks, tenant-consistency keys, a trigger that refuses update and delete on
-  audit events)
+- `prisma/migrations/` (new directory; migration 1 is generated tables, including the
+  tenant-consistency keys; migration 2 is hand-written SQL: UTC sessions, the partial unique
+  index on doctor and start time for active appointments, end-after-start checks, and triggers
+  that refuse update, delete and truncate on audit events)
 - `prisma/seed.ts` (fictional clinics in different time zones, doctors, staff, patients,
   specialties)
 
@@ -86,7 +116,8 @@ Library:
   `src/domain/slots.ts`)
 - `src/lib/appointments/core.ts` (the only code that inserts an appointment, moves it, or changes
   its status; does locking, slot re-check, booking limit, history, audit and notification in one
-  transaction, and maps the database conflict to `SLOT_TAKEN`)
+  transaction, refuses an overlap with a different start time, and maps the unique violation to
+  `SLOT_TAKEN`)
 
 Shared route handlers, written complete in Stream 0 as role dispatchers and then frozen:
 
@@ -107,7 +138,7 @@ Shared interface:
 - `src/app/layout.tsx`, `src/app/page.tsx`, `src/app/globals.css` (navigation for all roles is
   written once here, with every final link)
 - `src/components/` (clinic-time display with zone abbreviation, four-state wrapper, confirmation
-  dialog, error message, labelled field)
+  dialog, error message, labelled field, site header, development user chooser)
 - `src/lib/api-client.ts`
 
 Tests and helpers:
@@ -160,8 +191,8 @@ Streams A and B both add files under `src/app/api/v1/doctors/[doctorId]/` and
 
 ### Not changed
 
-`docs/001-appointment-booking/spec.md`, `intent/`, `.claude/`, `docker-compose.yml`,
-`prisma.config.ts`, `next.config.ts`.
+`docs/001-appointment-booking/spec.md` (apart from its status line, set by the Product Owner),
+`intent/`, `.claude/`, `docker-compose.yml`, `prisma.config.ts`, `next.config.ts`.
 
 ## Order of work
 
@@ -252,14 +283,21 @@ a foundation patch (a new migration if it is a schema change); both streams then
    set-password links (R98 to R103), and admin functions (R93 to R97). `CLAUDE.md` says auth is a
    stand-in. With the plan as written the MVP is not deployable to real users. Recommended: a
    Stream C after A and B; it needs new migrations and an email service not yet chosen (F22).
-2. **`CLAUDE.md` says "No free-text reason fields", but R20 makes reason for visit free text**
+2. **`CLAUDE.md` said "No free-text reason fields", but R20 makes reason for visit free text**
    (decided by the Product Owner, F8). This plan reads the `CLAUDE.md` rule as covering reasons
-   recorded by staff and doctors, and builds R20 as specified. The rule's wording should be
-   corrected so it is not applied to R20 by mistake.
-3. **The conflict is an exclusion violation, not a unique violation.** `CLAUDE.md` and the domain
-   skill speak of uniqueness; the spec's constraint raises a different PostgreSQL error, which
-   Prisma does not report as its usual unique-constraint error. The core must recognise it
-   explicitly, or a lost race becomes a 500. `core.test.ts` covers it against the real database.
+   recorded by staff and doctors, and builds R20 as specified. Accepted by the Product Owner,
+   2026-10-12; the wording in `CLAUDE.md` is corrected.
+3. **The unique index covers equal start times only.** It does not see two active appointments
+   that overlap with different starts. On one slot grid that cannot happen: slots of one length
+   that start at different grid points do not overlap. It can happen after a slot-length change
+   (R56), when an older, longer appointment overlaps a new grid point. That case is refused by
+   the slot re-check in `src/lib/appointments/core.ts`, which is application code, so the
+   database enforces R22 for equal starts only. Two consequences. A slot-length change must
+   take the exclusive doctor lock of Risks 5 (Stream B). And spec section 3 rule 1 and R22
+   still describe the exclusion constraint; the Product Owner should reword them.
+   `constraints.test.ts` pins down what the index does and does not cover, and `core.test.ts`
+   proves the core refuses the overlap. The conflict is an ordinary unique violation, which
+   Prisma reports with the index name; the core maps it to `SLOT_TAKEN`.
 4. **Idempotent replay versus "never retry silently".** R27 returns the original appointment for a
    repeated key; that is a replay of a stored result, not a retry of a conflict. The two cases
    must stay distinct in the core.
@@ -290,10 +328,14 @@ a foundation patch (a new migration if it is a schema change); both streams then
 
 ## Options rejected
 
-- **Uniqueness on doctor and start time.** Fails once a slot-length change leaves appointments of
-  different lengths (spec section 3, rule 1).
-- **Preventing double booking in application code, with advisory locks, or with serializable
-  isolation alone.** The domain rule requires the database to enforce it.
+- **An exclusion constraint on doctor and time range (`btree_gist`), for the MVP.** Rejected by
+  the Product Owner, 2026-10-12, in favour of the partial unique index on doctor and start
+  time. It would also refuse overlaps with different start times at the database, which the
+  index leaves to the core (Risks 3). It can be added later by a new migration without changing
+  callers.
+- **Preventing double booking in application code only, with advisory locks, or with
+  serializable isolation alone.** The domain rule requires the database to enforce it; the
+  unique index does, for equal start times.
 - **Storing slots as rows.** The spec computes them; stored slots would need regenerating on every
   schedule change.
 - **Splitting the streams by layer (API, then interface).** Both would edit the same routes.
@@ -330,7 +372,7 @@ Unit tests are colocated in `src/domain/`. Integration tests run against real Po
 | R1 (roles) | `tests/integration/foundation/session.test.ts`: resolves each of the four roles and its clinic from the header |
 | R3, R5 | `constraints.test.ts`: appointment, schedule and staff rows require a clinic; an appointment's clinic must equal its doctor's |
 | R9 | `constraints.test.ts`: every id is a random identifier |
-| R22, R30 | `constraints.test.ts`: the database refuses an overlapping active appointment for one doctor, inserted directly |
+| R22, R30 | `constraints.test.ts`: the database refuses a second active appointment for the same doctor and start time, inserted directly, and on a move; `core.test.ts`: the core refuses an overlap with a different start time |
 | R64 | `src/domain/transitions.test.ts`: every from, to and role combination outside the table is refused |
 | R63 | `transitions.test.ts`: completed and no-show are refused before the start |
 | R40 | `src/domain/window.test.ts`: the window is elapsed time, correct across a clock change |
@@ -343,7 +385,7 @@ Unit tests are colocated in `src/domain/`. Integration tests run against real Po
 | R74, R75, R76 | `notifications.test.ts`: the log adapter is called; the event has only type, timestamp and four ids; a substitute adapter needs no caller change |
 | R78, R79 | `logger.test.ts`: non-id fields are refused; `route.test.ts`: bodies and query values are absent from log output |
 | R81 | `audit.test.ts`: each core mutation writes all seven fields; clinic id is empty only for a patient's own profile change |
-| R82 | `audit.test.ts`: update and delete on audit events fail at the database |
+| R82 | `audit.test.ts`: update, delete and truncate on audit events fail at the database |
 | R83, R59 (lists) | `src/domain/visibility.test.ts`: each role's field list equals the table; `architecture.test.ts`: every handler responds through the serializer |
 | R88, R89 | `route.test.ts`: one error shape with a reference id; validation errors name the field and omit the value |
 | R85 | `architecture.test.ts`: no source text claims compliance |
