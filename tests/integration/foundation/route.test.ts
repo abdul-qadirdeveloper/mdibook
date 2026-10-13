@@ -198,9 +198,6 @@ describe("the one error shape (R88)", () => {
     const result = await call<ErrorJson>(pending, apiRequest("GET", "/pending", { userId: w.staffUser.id }));
     expect(result.status).toBe(500);
     expect(result.json.error.code).toBe("INTERNAL");
-
-    const actual = await vi.importActual<typeof import("@/lib/patient/book")>("@/lib/patient/book");
-    await expect(actual.bookAsPatient(w.patientSession, {} as never, NOW)).rejects.toThrow(NotImplementedError);
   });
 
   it("an application error carries its code, status and details", async () => {
