@@ -1,8 +1,9 @@
-// OWNER: Stream B. Placeholder with a fixed signature, called by the shared route
-// src/app/api/v1/appointments/[id]/reschedule/route.ts. Stream B replaces the body.
+// OWNER: Stream B. Called by the shared route
+// src/app/api/v1/appointments/[id]/reschedule/route.ts.
 //
-// To implement (R35, R36): call rescheduleAppointment() in src/lib/appointments/core.ts.
-import { NotImplementedError } from "@/lib/errors";
+// Staff and the appointment's doctor can move an appointment at any time before its start,
+// and the status stays as it was (R35, R36). The core does the move as one atomic operation.
+import { rescheduleAppointment } from "@/lib/appointments/core";
 import type { Session } from "@/lib/session";
 
 export interface ClinicRescheduleInput {
@@ -19,8 +20,5 @@ export async function rescheduleAsClinic(
   input: ClinicRescheduleInput,
   now: Date,
 ): Promise<ClinicRescheduleResult> {
-  void session;
-  void input;
-  void now;
-  throw new NotImplementedError("clinic.reschedule");
+  return rescheduleAppointment({ actor: session, appointmentId: input.appointmentId, newStart: input.start }, now);
 }
