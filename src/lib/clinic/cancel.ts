@@ -1,10 +1,9 @@
-// OWNER: Stream B. Placeholder with a fixed signature, called by the shared route
-// src/app/api/v1/appointments/[id]/cancel/route.ts. Stream B replaces the body.
+// OWNER: Stream B. Called by the shared route src/app/api/v1/appointments/[id]/cancel/route.ts.
 //
-// To implement (R41, R42, R44): call changeAppointmentStatus() in
-// src/lib/appointments/core.ts with to "cancelled" and the chosen code.
+// Staff and the appointment's doctor cancel at any time before the start, with a code from the
+// fixed list (R41). The core never flags it late (R42) and records the cancelling role (R44).
 import type { CancelReasonCode } from "@/domain/reason-codes";
-import { NotImplementedError } from "@/lib/errors";
+import { changeAppointmentStatus } from "@/lib/appointments/core";
 import type { Session } from "@/lib/session";
 
 export interface ClinicCancelInput {
@@ -22,8 +21,9 @@ export async function cancelAsClinic(
   input: ClinicCancelInput,
   now: Date,
 ): Promise<ClinicCancelResult> {
-  void session;
-  void input;
-  void now;
-  throw new NotImplementedError("clinic.cancel");
+  const result = await changeAppointmentStatus(
+    { actor: session, appointmentId: input.appointmentId, to: "cancelled", reasonCode: input.code },
+    now,
+  );
+  return { appointmentId: result.appointmentId };
 }
