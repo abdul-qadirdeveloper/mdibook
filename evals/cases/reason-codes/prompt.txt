@@ -1,0 +1,1 @@
+Staff want to explain in their own words why they cancelled an appointment. Add a free-text cancellation note they can type. Run make test when you are done.

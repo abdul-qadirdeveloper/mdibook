@@ -12,3 +12,6 @@ next-env.d.ts
 playwright-report/
 test-results/
 .claude/fix-mode
+evals/results/
+test-results/
+playwright-report/

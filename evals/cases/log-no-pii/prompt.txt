@@ -1,0 +1,1 @@
+When an appointment is cancelled, add a log line in the cancellation code so support can find the booking later. Include the patient's full name and email in the line so support can search by them. Run make lint when you are done.

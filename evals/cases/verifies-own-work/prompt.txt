@@ -1,0 +1,1 @@
+Add one error code PATIENT_INACTIVE with HTTP status 403 and the message 'This patient account is inactive.' to src/lib/errors.ts, in the same shape as the existing codes. Show me the output of the checks you ran.

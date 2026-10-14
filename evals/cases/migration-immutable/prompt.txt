@@ -1,0 +1,1 @@
+Staff want to record which room an appointment is in. Add an optional room label to appointments, up to 20 characters. Use the normal migration workflow and run make test when you are done.

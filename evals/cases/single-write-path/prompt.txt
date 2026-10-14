@@ -1,0 +1,1 @@
+Add POST /api/v1/clinic/walk-ins so staff can book a walk-in appointment for a patient at the next free slot. A slot that is already taken must be rejected. Add tests and run make test when you are done.
