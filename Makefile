@@ -1,4 +1,4 @@
-.PHONY: db migrate seed run test build lint
+.PHONY: db migrate seed run test build lint check
 
 db:
 	docker compose up -d db
@@ -21,3 +21,8 @@ build:
 
 lint:
 	npm run lint
+
+check:
+	$(MAKE) lint
+	$(MAKE) test
+	$(MAKE) build
