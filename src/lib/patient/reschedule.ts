@@ -1,9 +1,13 @@
-// OWNER: Stream A. Placeholder with a fixed signature, called by the shared route
-// src/app/api/v1/appointments/[id]/reschedule/route.ts. Stream A replaces the body.
+// OWNER: Stream A. Called by the shared route
+// src/app/api/v1/appointments/[id]/reschedule/route.ts.
 //
-// To implement (R32 to R34, R36, R37): call rescheduleAppointment() in
-// src/lib/appointments/core.ts, which enforces the cancellation window for a patient.
-import { NotImplementedError } from "@/lib/errors";
+// A patient moves their own upcoming appointment to another open slot with the same doctor
+// (R32). rescheduleAppointment() in src/lib/appointments/core.ts does it in one transaction:
+// the old slot is released only if the new one is taken (R33). It refuses a patient inside the
+// cancellation window (R34), returns a confirmed appointment to requested (R36), and keeps the
+// reason for visit and booking origin while adding the move to the history (R37).
+import { rescheduleAppointment } from "@/lib/appointments/core";
+import { AppError } from "@/lib/errors";
 import type { Session } from "@/lib/session";
 
 export interface PatientRescheduleInput {
@@ -20,8 +24,6 @@ export async function rescheduleAsPatient(
   input: PatientRescheduleInput,
   now: Date,
 ): Promise<PatientRescheduleResult> {
-  void session;
-  void input;
-  void now;
-  throw new NotImplementedError("patient.reschedule");
+  if (session.role !== "patient" || !session.patientId) throw new AppError("NOT_FOUND");
+  return rescheduleAppointment({ actor: session, appointmentId: input.appointmentId, newStart: input.start }, now);
 }

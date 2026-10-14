@@ -8,6 +8,8 @@ export const AUDIT_ACTIONS = [
   "appointment.confirmed",
   "appointment.rescheduled",
   "appointment.cancelled",
+  // A patient's cancellation inside the cancellation window (R39). A fixed code, not a payload.
+  "appointment.cancelled_late",
   "appointment.completed",
   "appointment.no_show",
   "patient.clinic_linked",

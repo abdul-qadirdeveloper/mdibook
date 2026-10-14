@@ -454,7 +454,9 @@ export async function changeAppointmentStatusInTx(
   await writeAudit(tx, {
     actorId: actor.userId,
     actorRole: role,
-    action: OUTCOME_AUDIT[to],
+    // A late cancel is audited under its own action, so the audit trail says it was late
+    // while still holding ids and fixed codes only (R39, R81).
+    action: lateCancel ? "appointment.cancelled_late" : OUTCOME_AUDIT[to],
     entityType: "appointment",
     entityId: appointmentId,
     clinicId: appointment.clinicId,
