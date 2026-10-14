@@ -1,0 +1,34 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: medibook
+          POSTGRES_PASSWORD: medibook
+          POSTGRES_DB: medibook
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U medibook"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://medibook:medibook@localhost:5432/medibook
+      TEST_DATABASE_URL: postgresql://medibook:medibook@localhost:5432/medibook
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma migrate deploy
+      - run: make lint
+      - run: make test
+      - run: make build

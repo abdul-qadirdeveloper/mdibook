@@ -1,0 +1,45 @@
+name: agent-evals
+on:
+  pull_request:
+    paths: ["CLAUDE.md", ".claude/**", "evals/**"]
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: medibook
+          POSTGRES_PASSWORD: medibook
+          POSTGRES_DB: medibook
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U medibook"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://medibook:medibook@localhost:5432/medibook
+      TEST_DATABASE_URL: postgresql://medibook:medibook@localhost:5432/medibook
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      EVAL_ALLOW_RESET: "1"
+      EVAL_MIN_PASS_RATE: "0.8"
+    steps:
+      - name: Stop early if there is no credential
+        run: test -n "$CLAUDE_CODE_OAUTH_TOKEN" || { echo "CLAUDE_CODE_OAUTH_TOKEN is not set (forks and Dependabot do not receive secrets)"; exit 1; }
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma migrate deploy
+      - run: npm install -g @anthropic-ai/claude-code
+      - run: evals/run.sh
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: evals/results
