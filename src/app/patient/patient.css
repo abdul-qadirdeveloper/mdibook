@@ -1,0 +1,211 @@
+/* Styles for the patient screens (Stream A). They build on src/app/globals.css and keep its
+   rules: AA contrast, visible focus, and controls of at least 44 by 44 px (R87). */
+
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.page-narrow {
+  max-width: 46rem;
+  margin: 0 auto;
+}
+
+.back-link {
+  display: inline-block;
+  min-height: 44px;
+  padding: 0.6rem 0;
+  margin-bottom: 0.5rem;
+}
+
+.section-title {
+  margin-top: 2rem;
+}
+
+.card + .card,
+.card-list > li + li {
+  margin-top: 1rem;
+}
+
+.card-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Find a doctor */
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0 1rem;
+}
+
+.filters input,
+.filters select,
+.field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--muted);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.field input.input--short {
+  max-width: 14rem;
+}
+
+.result-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.result-card h3 {
+  font-size: 1.25rem;
+}
+
+.result-card p {
+  margin: 0.25rem 0;
+}
+
+.result-card__slot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.result-card__slot strong {
+  font-size: 1.05rem;
+}
+
+/* Doctor profile and appointment details */
+
+.details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1rem 2rem;
+  margin: 1rem 0;
+}
+
+.details dt {
+  font-weight: 700;
+}
+
+.details dd {
+  margin: 0.15rem 0 0;
+}
+
+.slot-day {
+  margin-top: 1.5rem;
+  font-size: 1.1rem;
+}
+
+.slot-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+
+.slot-grid .button {
+  min-width: 9.5rem;
+  justify-content: center;
+  text-align: center;
+}
+
+.slot-option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.slot-option + .slot-option {
+  margin-top: 0.75rem;
+}
+
+/* Confirm booking */
+
+.notice {
+  margin: 1.25rem 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--page);
+}
+
+.notice h3 {
+  font-size: 1rem;
+}
+
+.notice ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.success-banner {
+  margin-bottom: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  border: 2px solid #14532d;
+  border-radius: var(--radius);
+  background: #edf7f0;
+}
+
+.success-banner h1 {
+  color: #14532d;
+}
+
+.success-banner p {
+  margin: 0;
+}
+
+/* My appointments */
+
+.appointment-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.appointment-card h3 {
+  font-size: 1.2rem;
+}
+
+.appointment-card p {
+  margin: 0.25rem 0;
+}
+
+.appointment-card__side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--muted);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-weight: 700;
+}

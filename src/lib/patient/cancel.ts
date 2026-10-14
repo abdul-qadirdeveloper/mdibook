@@ -1,9 +1,12 @@
-// OWNER: Stream A. Placeholder with a fixed signature, called by the shared route
-// src/app/api/v1/appointments/[id]/cancel/route.ts. Stream A replaces the body.
+// OWNER: Stream A. Called by the shared route
+// src/app/api/v1/appointments/[id]/cancel/route.ts.
 //
-// To implement (R38 to R40, R44): call changeAppointmentStatus() in
-// src/lib/appointments/core.ts with to "cancelled". It sets the late-cancel flag.
-import { NotImplementedError } from "@/lib/errors";
+// A patient cancels their own upcoming appointment (R38 to R40, R44). Inside the cancellation
+// window the cancellation still succeeds and is recorded as a late cancel (R39).
+// changeAppointmentStatus() in src/lib/appointments/core.ts decides that, records that the
+// patient cancelled, and writes the history row, audit event and notification event.
+import { changeAppointmentStatus } from "@/lib/appointments/core";
+import { AppError } from "@/lib/errors";
 import type { Session } from "@/lib/session";
 
 export interface PatientCancelInput {
@@ -21,8 +24,10 @@ export async function cancelAsPatient(
   input: PatientCancelInput,
   now: Date,
 ): Promise<PatientCancelResult> {
-  void session;
-  void input;
-  void now;
-  throw new NotImplementedError("patient.cancel");
+  if (session.role !== "patient" || !session.patientId) throw new AppError("NOT_FOUND");
+  const result = await changeAppointmentStatus(
+    { actor: session, appointmentId: input.appointmentId, to: "cancelled" },
+    now,
+  );
+  return { appointmentId: result.appointmentId, late: result.lateCancel };
 }
