@@ -34,7 +34,7 @@ MediBook: multi-tenant appointment booking for small clinics. Behavior is define
 
 ## Architecture
 
-- `src/domain`: pure logic, no database imports; unit tests sit next to the code. `src/app/api`: thin handlers.
+- `src/domain`: pure logic, no database imports; unit tests live next to the code. `src/app/api`: thin handlers.
 - `prisma/`: schema, migrations, seed. Tests: `tests/helpers`, `tests/integration`, `tests/architecture.test.ts`.
 - `src/lib`: database client, logger, audit, session, building blocks above. `src/lib/appointments`: appointment core.
 - `src/lib/patient`: patient use cases (Stream A). `src/lib/clinic`: doctor and staff use cases (Stream B).
