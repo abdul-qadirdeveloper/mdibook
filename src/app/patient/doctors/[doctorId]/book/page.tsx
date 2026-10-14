@@ -22,6 +22,7 @@ import {
   type PatientAppointment,
   type SlotTime,
   clinicDateLabel,
+  clinicMomentLabel,
   loadError,
   useApi,
 } from "../../../_shared";
@@ -112,18 +113,21 @@ function DeadlineTerms({
   timeZone,
   windowHours,
   now,
+  fromMyAppointments = false,
 }: {
   deadline: Date;
   timeZone: string;
   windowHours: number | null;
   now: number;
+  /** Once booked, say where to do it (mock 11). */
+  fromMyAppointments?: boolean;
 }) {
   const hours = windowHours === null ? null : ` (${windowHours} hours before)`;
+  const when = <time dateTime={deadline.toISOString()}>{clinicMomentLabel(deadline, timeZone)}</time>;
   if (now >= deadline.getTime()) {
     return (
       <>
-        This appointment starts within the clinic&apos;s cancellation window, which opened at{" "}
-        <ClinicTime instant={deadline} timeZone={timeZone} />
+        This appointment starts within the clinic&apos;s cancellation window, which opened at {when}
         {hours}. So it cannot be rescheduled online, and a cancellation is recorded as a late cancellation. To move
         it, call the clinic.
       </>
@@ -131,7 +135,8 @@ function DeadlineTerms({
   }
   return (
     <>
-      You can reschedule, or cancel without a late mark, until <ClinicTime instant={deadline} timeZone={timeZone} />
+      You can reschedule, or cancel without a late mark,{" "}
+      {fromMyAppointments ? <>from &quot;My appointments&quot; </> : null}until {when}
       {hours}. After that you can still cancel, and it is recorded as a late cancellation.
     </>
   );
@@ -273,8 +278,9 @@ function ConfirmBooking() {
             <DeadlineTerms
               deadline={new Date(booked.cancellationDeadline)}
               timeZone={booked.timeZone}
-              windowHours={null}
+              windowHours={terms?.cancellationWindowHours ?? null}
               now={bookedAt}
+              fromMyAppointments
             />
           </p>
         </section>

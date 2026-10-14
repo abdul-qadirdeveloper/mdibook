@@ -1,4 +1,4 @@
-.PHONY: db migrate seed run test build lint check
+.PHONY: db migrate seed run test build lint check visual
 
 db:
 	docker compose up -d db
@@ -21,6 +21,10 @@ build:
 
 lint:
 	npm run lint
+
+# Screenshot comparison of the patient screens. Not part of test or check. Needs the seeded database.
+visual:
+	npx playwright test tests/e2e/patient/visual.spec.ts
 
 check:
 	$(MAKE) lint

@@ -3,7 +3,7 @@
 // Shared by the patient screens: the response shapes of the Stream A routes, a hook that loads
 // one of them, and the wording of load errors. Everything here runs in the browser.
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { clinicTime } from "@/domain/time";
+import { clinicTime, localDateOf, weekdayOf } from "@/domain/time";
 import { type ApiError, type ApiResult, api, readDevUserSnapshot, subscribeDevUser } from "@/lib/api-client";
 
 export interface DoctorSummary {
@@ -120,9 +120,37 @@ export function loadError(error: ApiError, title: string, serverFault: string) {
   };
 }
 
-/** "Wed, Oct 14, 2026", the calendar date of an instant in the clinic's time zone. */
-export function clinicDateLabel(instant: string, timeZone: string): string {
-  return clinicTime(new Date(instant), timeZone).dateLabel;
+const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+/**
+ * "Wednesday 14 October 2026", the calendar date of an instant in the clinic's time zone, as the
+ * mocks write it. Without the year: "Wednesday 14 October".
+ */
+export function clinicDateLabel(instant: string | Date, timeZone: string, withYear = true): string {
+  const date = localDateOf(typeof instant === "string" ? new Date(instant) : instant, timeZone);
+  const [year, month, day] = date.split("-").map(Number);
+  const label = `${WEEKDAYS[weekdayOf(date) - 1]} ${day} ${MONTHS[month - 1]}`;
+  return withYear ? `${label} ${year}` : label;
+}
+
+/** "Sunday 11 October, 9:00 AM CDT": a moment near the appointment, in the clinic's time zone. */
+export function clinicMomentLabel(instant: Date, timeZone: string): string {
+  const t = clinicTime(instant, timeZone);
+  return `${clinicDateLabel(instant, timeZone, false)}, ${t.timeLabel} ${t.zoneAbbreviation}`;
 }
 
 /** "CDT": the clinic zone's abbreviation at that instant. */
