@@ -9,5 +9,7 @@ const paramsSchema = z.object({ id: idSchema });
 export const GET = route({
   roles: ["staff"],
   params: paramsSchema,
-  handler: async ({ params }) => ({ body: { history: await readAppointmentHistory(params.id) } }),
+  handler: async ({ session, params }) => ({
+    body: { history: await readAppointmentHistory(session, params.id) },
+  }),
 });

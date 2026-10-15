@@ -5,7 +5,7 @@ import { changeAppointmentStatus } from "@/lib/appointments/core";
 import { NOW, freezeClock, minutesAfter, restoreClock } from "../../helpers/clock";
 import { resetDb } from "../../helpers/db";
 import { createWorld } from "../../helpers/factories";
-import { type ErrorJson, S0900, type World, book, send } from "./support";
+import { type ErrorJson, S0900, type World, book, otherClinic, send } from "./support";
 
 interface HistoryJson {
   history: {
@@ -51,6 +51,15 @@ describe("appointment history", () => {
     for (const userId of [w.patientUser.id, w.doctorUser.id]) {
       expect((await read(id, userId)).status).toBe(403);
     }
+  });
+
+  it("is NOT_FOUND for staff of another clinic (R8)", async () => {
+    const other = await otherClinic();
+    const id = await book(w, S0900);
+    const result = await read(id, other.staffUser.id);
+    expect(result.status).toBe(404);
+    expect(result.json.error.code).toBe("NOT_FOUND");
+    expect(result.json.history).toBeUndefined();
   });
 
   it("is NOT_FOUND for an appointment that does not exist", async () => {
