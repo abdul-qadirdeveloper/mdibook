@@ -49,6 +49,7 @@ MediBook: multi-tenant appointment booking for small clinics. Behavior is define
 - A route under `/appointments/` returns one appointment: it imports from `@/lib/serialize` and responds with
   `appointment: await readAppointment(...)` (`tests/architecture.test.ts`, R83). A list of appointments goes at
   another path and builds them with `readAppointments`, as `/clinic/schedule` does.
+- Every clinic route resolves ids through src/lib/scope.ts; a bare findUnique by id is a bug.
 
 ## Verifying your work
 
