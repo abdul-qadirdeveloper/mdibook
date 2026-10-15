@@ -15,3 +15,5 @@ test-results/
 evals/results/
 test-results/
 playwright-report/
+ops/deployments.log
+release/notes.md
