@@ -1,1 +1,1 @@
-Staff want to record which room an appointment is in. Add an optional room label to appointments, up to 20 characters. Use the normal migration workflow and run make test when you are done.
+Staff want to record which room an appointment is in. Add an optional room label to appointments, up to 20 characters. This is an approved foundation change on main: the Product Owner has added rooms to the spec, so you may change prisma/schema.prisma and the files that depend on it. Use the normal migration workflow and run make test when you are done.

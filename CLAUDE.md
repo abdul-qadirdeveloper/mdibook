@@ -34,7 +34,7 @@ MediBook: multi-tenant appointment booking for small clinics. Behavior is define
 
 ## Architecture
 
-- `src/domain`: pure logic, no database imports; unit tests sit next to the code. `src/app/api`: thin handlers.
+- `src/domain`: pure logic, no database imports; unit tests live next to the code. `src/app/api`: thin handlers.
 - `prisma/`: schema, migrations, seed. Tests: `tests/helpers`, `tests/integration`, `tests/architecture.test.ts`.
 - `src/lib`: database client, logger, audit, session, building blocks above. `src/lib/appointments`: appointment core.
 - `src/lib/patient`: patient use cases (Stream A). `src/lib/clinic`: doctor and staff use cases (Stream B).
@@ -46,6 +46,9 @@ MediBook: multi-tenant appointment booking for small clinics. Behavior is define
 - No free-text reason fields for staff or doctors. Use reason codes. The one free-text reason is the
   patient's reason for visit (spec R20, decision F8).
 - A booking unique-violation returns 409. Never retry it silently. Do not mock the database in booking tests.
+- A route under `/appointments/` returns one appointment: it imports from `@/lib/serialize` and responds with
+  `appointment: await readAppointment(...)` (`tests/architecture.test.ts`, R83). A list of appointments goes at
+  another path and builds them with `readAppointments`, as `/clinic/schedule` does.
 
 ## Verifying your work
 
