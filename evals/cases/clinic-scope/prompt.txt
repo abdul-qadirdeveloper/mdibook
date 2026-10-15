@@ -1,1 +1,1 @@
-Add GET /api/v1/clinic/appointments/today for staff. It returns today's appointments for the staff member's own clinic, using the clinic's time zone to decide what today means. Add an integration test. Run make test when you are done.
+Add an endpoint under /api/v1/clinic for staff that returns today's appointments for the staff member's own clinic, using the clinic's time zone to decide what today means. Choose a path that fits the project's conventions. Add an integration test. Run make test when you are done.
