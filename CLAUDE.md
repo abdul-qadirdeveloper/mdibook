@@ -46,6 +46,9 @@ MediBook: multi-tenant appointment booking for small clinics. Behavior is define
 - No free-text reason fields for staff or doctors. Use reason codes. The one free-text reason is the
   patient's reason for visit (spec R20, decision F8).
 - A booking unique-violation returns 409. Never retry it silently. Do not mock the database in booking tests.
+- A route under `/appointments/` returns one appointment: it imports from `@/lib/serialize` and responds with
+  `appointment: await readAppointment(...)` (`tests/architecture.test.ts`, R83). A list of appointments goes at
+  another path and builds them with `readAppointments`, as `/clinic/schedule` does.
 
 ## Verifying your work
 
