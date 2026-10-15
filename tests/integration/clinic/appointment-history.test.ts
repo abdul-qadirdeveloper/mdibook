@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { GET as historyRoute } from "@/app/api/v1/clinic/appointments/[id]/history/route";
 import { changeAppointmentStatus } from "@/lib/appointments/core";
-import { NOW, freezeClock, restoreClock } from "../../helpers/clock";
+import { NOW, freezeClock, minutesAfter, restoreClock } from "../../helpers/clock";
 import { resetDb } from "../../helpers/db";
 import { createWorld } from "../../helpers/factories";
 import { type ErrorJson, S0900, type World, book, send } from "./support";
@@ -29,7 +29,10 @@ afterEach(() => restoreClock());
 describe("appointment history", () => {
   it("lists the appointment's audit events, oldest first, with ids and codes only", async () => {
     const id = await book(w, S0900);
-    await changeAppointmentStatus({ actor: w.staffSession, appointmentId: id, to: "confirmed" }, NOW);
+    // Prisma stamps the event time from the frozen clock, so move it on before the second action.
+    const later = minutesAfter(NOW, 5);
+    freezeClock(later);
+    await changeAppointmentStatus({ actor: w.staffSession, appointmentId: id, to: "confirmed" }, later);
 
     const result = await read(id);
     expect(result.status).toBe(200);
