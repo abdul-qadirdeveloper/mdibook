@@ -30,3 +30,7 @@ check:
 	$(MAKE) lint
 	$(MAKE) test
 	$(MAKE) build
+	$(MAKE) ops-checks
+
+ops-checks:
+	node --test ops/detect.checks.mjs
