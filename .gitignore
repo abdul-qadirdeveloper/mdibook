@@ -17,3 +17,4 @@ test-results/
 playwright-report/
 ops/deployments.log
 release/notes.md
+ops/metrics/
