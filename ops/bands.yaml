@@ -1,0 +1,18 @@
+# Control bands for MediBook production metrics. Version-controlled: a change here is a pull
+# request, reviewed by the service owner (see .github/CODEOWNERS).
+#
+# The detector is plain code. It compares each metric with its own rolling baseline and measures
+# the distance in standard deviations (sigma). No model is involved in deciding whether a band
+# is breached. A model only gets invoked after a breach, and only as far as `action` allows.
+baseline:
+  window_points: 60         # the baseline is the last 60 normal points (one point per minute, so about an hour)
+  warmup_points: 30         # no judgments until the baseline has this many points
+  freeze_at_sigma: 2        # a point this far out, or any point while a band is active, is NOT added to the baseline
+  clear_after: 3            # a band clears only after this many quiet points in a row, so it does not flap
+bands:                      # must be listed from the lowest sigma to the highest
+  - { name: watch,    sigma: 1, sustain: 5, action: log }       # record it. Nobody is paged.
+  - { name: diagnose, sigma: 2, sustain: 3, action: diagnose }  # Claude may read and explain. Read-only.
+  - { name: propose,  sigma: 3, sustain: 3, action: propose }   # Claude may also draft a PR or a runbook step for a human to approve.
+metrics:
+  booking_conflict_rate: { direction: above, min_sigma: 0.004, min_events: 20 }   # share of bookings answered 409 SLOT_TAKEN
+  api_5xx_rate:          { direction: above, min_sigma: 0.001, min_events: 20 }   # share of requests answered 5xx
