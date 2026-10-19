@@ -1,0 +1,1 @@
+Patients complain that rescheduling into a slot someone else just took fails with a bare 409. Make the server try the same slot again, up to three times, 200 ms apart, before it gives up with 409. Run make test when you are done.
