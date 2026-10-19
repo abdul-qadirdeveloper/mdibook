@@ -5,6 +5,7 @@ import {
   type Schedule,
   checkSlot,
   generateSlots,
+  nearestSlots,
   openSlots,
 } from "./slots";
 import { DAY_MS, MINUTE_MS, clinicTime } from "./time";
@@ -332,5 +333,32 @@ describe("booking rules for one slot (R24)", () => {
     const autumn = utc("2026-10-25T00:00:00Z");
     expect(checkSlot(night, utc("2026-11-01T06:30:00Z"), autumn).ok).toBe(true); // 01:30 CDT
     expect(checkSlot(night, utc("2026-11-01T07:30:00Z"), autumn).ok).toBe(true); // 01:30 CST
+  });
+});
+
+describe("nearestSlots (spec 003 R3, R4)", () => {
+  // Open slots every 30 minutes from 14:00 to 16:30 UTC.
+  const open = [0, 30, 60, 90, 120, 150].map((m) => ({
+    start: new Date(utc("2026-10-14T14:00:00Z").getTime() + m * MINUTE_MS),
+    end: new Date(utc("2026-10-14T14:30:00Z").getTime() + m * MINUTE_MS),
+  }));
+  const starts = (slots: { start: Date }[]) => slots.map((s) => s.start.toISOString());
+  const target = utc("2026-10-14T15:00:00Z");
+
+  it("ties go to the earlier slot", () => {
+    // 14:30 and 15:30 are both 30 minutes away; 14:00 and 16:00 are both 60 minutes away.
+    const picked = nearestSlots(open, target, 3, [target]);
+    expect(starts(picked)).toEqual(["2026-10-14T14:00:00.000Z", "2026-10-14T14:30:00.000Z", "2026-10-14T15:30:00.000Z"]);
+  });
+
+  it("returns them earliest first, never an excluded start, and at most count", () => {
+    const last = utc("2026-10-14T16:30:00Z");
+    const picked = nearestSlots(open, last, 2, [last, utc("2026-10-14T16:00:00Z")]);
+    expect(starts(picked)).toEqual(["2026-10-14T15:00:00.000Z", "2026-10-14T15:30:00.000Z"]);
+  });
+
+  it("returns fewer, or none, when there are not enough open slots", () => {
+    expect(nearestSlots(open.slice(0, 1), target, 3, [])).toHaveLength(1);
+    expect(nearestSlots([], target, 3, [])).toEqual([]);
   });
 });

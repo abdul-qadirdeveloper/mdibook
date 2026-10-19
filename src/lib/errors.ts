@@ -49,6 +49,25 @@ export const ERRORS = {
 
 export type ErrorCode = keyof typeof ERRORS;
 
+/** Other fixed messages for a code, where the same code means something else to the caller.
+ *  The code and status stay those of the ERRORS table. */
+export const MESSAGE_VARIANTS = {
+  // A move that lost its slot: the appointment was not moved (spec 003 R2).
+  reschedule: {
+    code: "SLOT_TAKEN",
+    message:
+      "That time was just taken by someone else. Your appointment was not moved and is still at its original time. Choose another open time.",
+  },
+  // The same, with no other open slot before the booking horizon (spec 003 R5).
+  rescheduleNoSlots: {
+    code: "SLOT_TAKEN",
+    message:
+      "That time was just taken by someone else. There are no other open times with this doctor in the next 90 days. Your appointment was not moved and is kept at its original time. You can contact the clinic.",
+  },
+} as const satisfies Record<string, { code: ErrorCode; message: string }>;
+
+export type MessageVariant = keyof typeof MESSAGE_VARIANTS;
+
 /** Names the field and the problem. Never repeats the value typed (R89). */
 export interface FieldProblem {
   field: string;
@@ -68,12 +87,15 @@ export interface ErrorDetails {
 export class AppError extends Error {
   readonly code: ErrorCode;
   readonly details: ErrorDetails;
+  /** Picks another fixed message for the same code. Ignored unless it belongs to this code. */
+  readonly messageVariant?: MessageVariant;
 
-  constructor(code: ErrorCode, details: ErrorDetails = {}) {
+  constructor(code: ErrorCode, details: ErrorDetails = {}, messageVariant?: MessageVariant) {
     super(code);
     this.name = "AppError";
     this.code = code;
     this.details = details;
+    this.messageVariant = messageVariant;
   }
 
   get status(): number {
@@ -101,6 +123,13 @@ export interface ErrorBody {
 }
 
 /** The single error shape: a stable code, a plain message and a request reference id. */
-export function errorBody(code: ErrorCode, requestId: string, details: ErrorDetails = {}): ErrorBody {
-  return { error: { code, message: ERRORS[code].message, requestId, ...details } };
+export function errorBody(
+  code: ErrorCode,
+  requestId: string,
+  details: ErrorDetails = {},
+  messageVariant?: MessageVariant,
+): ErrorBody {
+  const variant = messageVariant ? MESSAGE_VARIANTS[messageVariant] : undefined;
+  const message = variant && variant.code === code ? variant.message : ERRORS[code].message;
+  return { error: { code, message, requestId, ...details } };
 }

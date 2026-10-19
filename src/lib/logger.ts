@@ -1,5 +1,6 @@
 // All application logging goes through here (R78, R79). A log line is an event code plus
-// opaque ids, nothing else: there is no message argument and no way to attach a payload.
+// opaque ids, plus at most the one boolean flag below: there is no message argument and no way
+// to attach a payload.
 // A field that is not a known id key, or whose value is not an id, is dropped and counted.
 
 const ID_KEYS = [
@@ -17,8 +18,13 @@ const ID_KEYS = [
   "notificationId",
 ] as const;
 
+// The one field that is not an id: a server-computed yes or no on reschedule.conflict (spec 003
+// R13, R14). Any other value for it is refused like a field that is not an id.
+const FLAG_KEYS = ["sameSlotRetry"] as const;
+
 export type LogIdKey = (typeof ID_KEYS)[number];
-export type LogIds = Partial<Record<LogIdKey, string | null | undefined>>;
+export type LogFlagKey = (typeof FLAG_KEYS)[number];
+export type LogIds = Partial<Record<LogIdKey, string | null | undefined>> & Partial<Record<LogFlagKey, boolean>>;
 export type LogLevel = "info" | "warn" | "error";
 
 // An event is a code such as "appointment.booked" or "request.failed.SLOT_TAKEN", never a sentence.
@@ -39,7 +45,7 @@ export function setLogSink(next: Sink | null): void {
 
 function write(level: LogLevel, event: string, ids?: LogIds): void {
   const validEvent = typeof event === "string" && event.length <= MAX_EVENT_LENGTH && EVENT_SHAPE.test(event);
-  const entry: Record<string, string | number> = {
+  const entry: Record<string, string | number | boolean> = {
     ts: new Date().toISOString(),
     level,
     event: validEvent ? event : "logger.event_refused",
@@ -48,6 +54,8 @@ function write(level: LogLevel, event: string, ids?: LogIds): void {
   for (const [key, value] of Object.entries(ids ?? {})) {
     if (value === null || value === undefined) continue;
     if ((ID_KEYS as readonly string[]).includes(key) && typeof value === "string" && ID_SHAPE.test(value)) {
+      entry[key] = value;
+    } else if ((FLAG_KEYS as readonly string[]).includes(key) && typeof value === "boolean") {
       entry[key] = value;
     } else {
       refused += 1;

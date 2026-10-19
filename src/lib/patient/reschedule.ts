@@ -13,6 +13,8 @@ import type { Session } from "@/lib/session";
 export interface PatientRescheduleInput {
   appointmentId: string;
   start: Date;
+  /** For the reschedule.conflict log line (spec 003 R13). */
+  requestId?: string | null;
 }
 
 export interface PatientRescheduleResult {
@@ -25,5 +27,8 @@ export async function rescheduleAsPatient(
   now: Date,
 ): Promise<PatientRescheduleResult> {
   if (session.role !== "patient" || !session.patientId) throw new AppError("NOT_FOUND");
-  return rescheduleAppointment({ actor: session, appointmentId: input.appointmentId, newStart: input.start }, now);
+  return rescheduleAppointment(
+    { actor: session, appointmentId: input.appointmentId, newStart: input.start, requestId: input.requestId },
+    now,
+  );
 }

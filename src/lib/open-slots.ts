@@ -1,6 +1,14 @@
 // Loads a doctor's working hours, breaks, time off and active appointments, and asks
 // src/domain/slots.ts which slots are open. Slots are computed, never stored.
-import { type Availability, type Slot, type SlotCheck, bookingHorizon, checkSlot, openSlots } from "@/domain/slots";
+import {
+  type Availability,
+  type Slot,
+  type SlotCheck,
+  bookingHorizon,
+  checkSlot,
+  nearestSlots,
+  openSlots,
+} from "@/domain/slots";
 import { DAY_MS } from "@/domain/time";
 import { ACTIVE_STATUSES } from "@/domain/transitions";
 import type { DbClient } from "@/lib/db";
@@ -121,6 +129,46 @@ export async function nextOpenSlots(
     timeZone = doctor.clinic.timeZone;
   }
   return { timeZone, slots: found.slice(0, count) };
+}
+
+/**
+ * The open slots nearest in time to an instant, before or after it, earliest first (spec 003 R3).
+ * Uses listOpenSlots, as the doctor's open-slot list does, so every slot is one the caller could
+ * see there (R4). Widens a window around the instant in steps, clamped to now and the booking
+ * horizon, until it holds enough slots or covers the whole range. A window that reaches equally
+ * far on both sides and holds enough slots holds the nearest ones.
+ */
+export async function nearestOpenSlots(
+  client: DbClient,
+  doctorId: string,
+  target: Date,
+  count: number,
+  now: Date,
+  exclude: Date[] = [],
+): Promise<{ timeZone: string; slots: Slot[] } | null> {
+  const earliest = now.getTime() + 1;
+  const latest = bookingHorizon(now).getTime() + 1;
+  const step = SEARCH_STEP_DAYS * DAY_MS;
+
+  const around = async (radius: number) => {
+    const from = Math.max(target.getTime() - radius, earliest);
+    const to = Math.min(target.getTime() + radius, latest);
+    const page = await listOpenSlots(client, doctorId, new Date(from), new Date(Math.max(from, to)), now);
+    if (!page) return null;
+    return {
+      timeZone: page.timeZone,
+      slots: nearestSlots(page.slots, target, count, exclude),
+      coversAll: from <= earliest && to >= latest,
+    };
+  };
+
+  let radius = step;
+  let found = await around(radius);
+  while (found && found.slots.length < count && !found.coversAll) {
+    radius += step;
+    found = await around(radius);
+  }
+  return found && { timeZone: found.timeZone, slots: found.slots };
 }
 
 /**
