@@ -91,6 +91,18 @@ describe("logger", () => {
     expect(raw).not.toContain("Example Clinic");
   });
 
+  it("accepts sameSlotRetry only as a boolean (spec 003 R13)", () => {
+    for (const flag of [true, false]) {
+      const { lines } = capture(() => logger.warn("reschedule.conflict", { requestId: ID, sameSlotRetry: flag }));
+      expect(lines[0]).toEqual({ ts: lines[0].ts, level: "warn", event: "reschedule.conflict", requestId: ID, sameSlotRetry: flag });
+    }
+    for (const value of ["true", 1, "Pat Example"]) {
+      const { lines, raw } = capture(() => logger.warn("a.b", { sameSlotRetry: value as never }));
+      expect(lines[0]).toEqual({ ts: lines[0].ts, level: "warn", event: "a.b", refusedFields: 1 });
+      expect(raw).not.toContain("Pat Example");
+    }
+  });
+
   it("skips empty ids without counting them as refused", () => {
     const { lines } = capture(() => logger.info("a.b", { requestId: ID, actorId: undefined, clinicId: null }));
     expect(lines[0]).toEqual({ ts: lines[0].ts, level: "info", event: "a.b", requestId: ID });
