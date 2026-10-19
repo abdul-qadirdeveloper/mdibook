@@ -50,6 +50,7 @@ MediBook: multi-tenant appointment booking for small clinics. Behavior is define
   `appointment: await readAppointment(...)` (`tests/architecture.test.ts`, R83). A list of appointments goes at
   another path and builds them with `readAppointments`, as `/clinic/schedule` does.
 - Every clinic route resolves ids through src/lib/scope.ts; a bare findUnique by id is a bug.
+- A reschedule that loses a race returns the conflict error with alternative slots. Never retry the taken slot on the server (INC-20261015-0415).
 
 ## Verifying your work
 

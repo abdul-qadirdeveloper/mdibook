@@ -4,7 +4,14 @@
 import { randomUUID } from "node:crypto";
 import type { ZodType } from "zod";
 import type { Role } from "@/domain/transitions";
-import { AppError, type ErrorCode, type ErrorDetails, type FieldProblem, errorBody } from "@/lib/errors";
+import {
+  AppError,
+  type ErrorCode,
+  type ErrorDetails,
+  type FieldProblem,
+  type MessageVariant,
+  errorBody,
+} from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { fieldProblems, idempotencyKeySchema } from "@/lib/schemas";
 import { requireRole } from "@/lib/scope";
@@ -50,8 +57,8 @@ function respond(status: number, body: unknown, requestId: string): Response {
   });
 }
 
-function fail(code: ErrorCode, requestId: string, details?: ErrorDetails): Response {
-  return respond(new AppError(code).status, errorBody(code, requestId, details), requestId);
+function fail(code: ErrorCode, requestId: string, details?: ErrorDetails, messageVariant?: MessageVariant): Response {
+  return respond(new AppError(code).status, errorBody(code, requestId, details, messageVariant), requestId);
 }
 
 // The class of an unexpected error and its database error code, as an event suffix. The
@@ -146,7 +153,7 @@ export function route<B = undefined, Q = undefined, P = undefined>(config: Route
     } catch (error) {
       if (error instanceof AppError) {
         logger.info(`request.failed.${error.code}`, { requestId, actorId });
-        return fail(error.code, requestId, error.details);
+        return fail(error.code, requestId, error.details, error.messageVariant);
       }
       const event = unexpectedEvent(error);
       logger.error(event, { requestId, actorId });

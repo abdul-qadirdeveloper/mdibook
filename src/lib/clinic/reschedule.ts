@@ -9,6 +9,8 @@ import type { Session } from "@/lib/session";
 export interface ClinicRescheduleInput {
   appointmentId: string;
   start: Date;
+  /** For the reschedule.conflict log line (spec 003 R13). */
+  requestId?: string | null;
 }
 
 export interface ClinicRescheduleResult {
@@ -20,5 +22,8 @@ export async function rescheduleAsClinic(
   input: ClinicRescheduleInput,
   now: Date,
 ): Promise<ClinicRescheduleResult> {
-  return rescheduleAppointment({ actor: session, appointmentId: input.appointmentId, newStart: input.start }, now);
+  return rescheduleAppointment(
+    { actor: session, appointmentId: input.appointmentId, newStart: input.start, requestId: input.requestId },
+    now,
+  );
 }

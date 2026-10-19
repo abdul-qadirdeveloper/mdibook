@@ -127,6 +127,18 @@ export function openSlots(a: Availability, from: Date, to: Date, now: Date): Slo
   return open;
 }
 
+/** The `count` open slots nearest in time to `target`, before or after it, leaving out the
+ *  `exclude` starts. On a tie the earlier slot wins. Ordered by start (spec 003 R3, R4). */
+export function nearestSlots(open: Slot[], target: Date, count: number, exclude: Date[]): Slot[] {
+  const excluded = new Set(exclude.map((d) => d.getTime()));
+  const distance = (slot: Slot) => Math.abs(slot.start.getTime() - target.getTime());
+  return open
+    .filter((slot) => !excluded.has(slot.start.getTime()))
+    .sort((a, b) => distance(a) - distance(b) || a.start.getTime() - b.start.getTime())
+    .slice(0, count)
+    .sort((a, b) => a.start.getTime() - b.start.getTime());
+}
+
 /** Checks one requested start against every rule of R24. The server runs this again at booking
  *  time. */
 export function checkSlot(a: Availability, start: Date, now: Date): SlotCheck {

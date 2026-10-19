@@ -16,8 +16,8 @@ export const POST = route({
   roles: ["patient", "doctor", "staff"],
   params: paramsSchema,
   body: bodySchema,
-  handler: async ({ session, params, body, now }) => {
-    const input = { appointmentId: params.id, start: body.startsAt };
+  handler: async ({ session, params, body, now, requestId }) => {
+    const input = { appointmentId: params.id, start: body.startsAt, requestId };
     const result =
       session.role === "patient"
         ? await rescheduleAsPatient(session, input, now)

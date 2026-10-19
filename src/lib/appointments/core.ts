@@ -6,8 +6,9 @@
 //
 // Double booking is prevented by the database: the partial unique index
 // "Appointment_one_active_per_doctor_start" allows one active appointment per doctor and start
-// time. A unique violation on it means the caller lost a race. It is reported as SLOT_TAKEN
-// with the next three open slots, and it is never retried here.
+// time. A unique violation on it means the caller lost a race. It is reported as SLOT_TAKEN,
+// with the next three open slots for a booking and the three nearest open slots for a move
+// (spec 003 R3), and it is never retried here.
 import { type ReasonCode, isCancelReasonCode, isScheduleChangeReasonCode } from "@/domain/reason-codes";
 import type { Slot } from "@/domain/slots";
 import { type Status, checkTransition, isActive, statusAfterReschedule } from "@/domain/transitions";
@@ -21,9 +22,11 @@ import {
   deliverNotifications,
   recordNotification,
 } from "@/lib/notifications";
-import { checkBookable, nextOpenSlots } from "@/lib/open-slots";
+import { logger } from "@/lib/logger";
+import { checkBookable, nearestOpenSlots, nextOpenSlots } from "@/lib/open-slots";
 import { appointmentScope } from "@/lib/scope";
 import type { Session } from "@/lib/session";
+import { hasLost, recordLost } from "./lost-slots";
 
 const NEXT_SLOTS_OFFERED = 3;
 
@@ -48,6 +51,39 @@ async function slotTaken(doctorId: string, wanted: Date, now: Date): Promise<App
     })),
     timeZone: next?.timeZone,
   });
+}
+
+interface LostMove {
+  actor: Session;
+  doctorId: string;
+  clinicId: string;
+  /** The appointment's own start, which is not offered (spec 003 R4). */
+  currentStart: Date;
+  wanted: Date;
+  requestId?: string | null;
+}
+
+/**
+ * SLOT_TAKEN for a move that lost its slot (spec 003): the three open slots nearest the taken
+ * one, and a message that says the appointment was not moved (R2, R3, R5). Writes the one
+ * reschedule.conflict line, with ids and the sameSlotRetry flag only (R13, R14).
+ */
+async function moveConflict(lost: LostMove, now: Date): Promise<AppError> {
+  const { actor, doctorId, clinicId, currentStart, wanted } = lost;
+  const lostBefore = hasLost(actor.userId, doctorId, wanted, now);
+  recordLost(actor.userId, doctorId, wanted, now);
+  logger.warn("reschedule.conflict", { requestId: lost.requestId, doctorId, clinicId, sameSlotRetry: lostBefore });
+
+  const nearest = await nearestOpenSlots(db, doctorId, wanted, NEXT_SLOTS_OFFERED, now, [wanted, currentStart]);
+  const nextSlots = (nearest?.slots ?? []).map((slot: Slot) => ({
+    startsAt: slot.start.toISOString(),
+    endsAt: slot.end.toISOString(),
+  }));
+  return new AppError(
+    "SLOT_TAKEN",
+    { nextSlots, timeZone: nearest?.timeZone },
+    nextSlots.length > 0 ? "reschedule" : "rescheduleNoSlots",
+  );
 }
 
 interface LockedDoctor {
@@ -262,6 +298,8 @@ export interface RescheduleInput {
   actor: Session;
   appointmentId: string;
   newStart: Date;
+  /** The request's reference id, for the reschedule.conflict log line (spec 003 R13). */
+  requestId?: string | null;
 }
 
 /**
@@ -276,10 +314,18 @@ export async function rescheduleAppointment(input: RescheduleInput, now: Date): 
 
   const found = await db.appointment.findFirst({
     where: { id: appointmentId, ...appointmentScope(actor) },
-    select: { doctorId: true },
+    select: { doctorId: true, clinicId: true, startsAt: true },
   });
   if (!found) throw new AppError("NOT_FOUND");
   const doctorId = found.doctorId;
+  const lost: LostMove = {
+    actor,
+    doctorId,
+    clinicId: found.clinicId,
+    currentStart: found.startsAt,
+    wanted: newStart,
+    requestId: input.requestId,
+  };
 
   let event: NotificationEvent;
   try {
@@ -355,8 +401,8 @@ export async function rescheduleAppointment(input: RescheduleInput, now: Date): 
       });
     });
   } catch (error) {
-    if (error instanceof SlotTaken) throw await slotTaken(doctorId, newStart, now);
-    if (violatedUniqueIndex(error) !== null) throw await slotTaken(doctorId, newStart, now);
+    // Someone else holds the slot. 409, the appointment stays where it was, never tried again.
+    if (error instanceof SlotTaken || violatedUniqueIndex(error) !== null) throw await moveConflict(lost, now);
     throw error;
   }
 
