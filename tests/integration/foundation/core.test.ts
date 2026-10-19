@@ -419,7 +419,7 @@ describe("rescheduling", () => {
     );
   });
 
-  it("onto a taken slot: SLOT_TAKEN with the next slots, and the appointment is unchanged (R33)", async () => {
+  it("onto a taken slot: SLOT_TAKEN with the nearest slots, and the appointment is unchanged (R33, spec 003 R3)", async () => {
     const mine = await book(w.patientSession, S0900);
     const other = await newPatient();
     await book(other.session, S1000, { patientId: other.patient.id });
@@ -430,7 +430,7 @@ describe("rescheduling", () => {
       "SLOT_TAKEN",
     );
     expect(error.details.nextSlots).toHaveLength(3);
-    expect(error.details.nextSlots?.[0].startsAt).toBe(at("2026-10-14", "10:30").toISOString());
+    expect(error.details.nextSlots?.[0].startsAt).toBe(S0930.toISOString());
     const row = await appointment(mine.appointmentId);
     expect(row.startsAt).toEqual(S0900);
     expect(row.status).toBe("requested");
