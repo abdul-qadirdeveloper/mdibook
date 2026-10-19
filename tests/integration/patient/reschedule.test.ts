@@ -12,10 +12,10 @@ type World = Awaited<ReturnType<typeof createWorld>>;
 let w: World;
 let id: string;
 const S0900 = at("2026-10-14", "09:00");
+const S0930 = at("2026-10-14", "09:30");
 const S1000 = at("2026-10-14", "10:00");
 const S1030 = at("2026-10-14", "10:30");
 const S1100 = at("2026-10-14", "11:00");
-const S1130 = at("2026-10-14", "11:30");
 const S1200 = at("2026-10-14", "12:00");
 
 const to = (start: Date) => ({ startsAt: start.toISOString() });
@@ -111,7 +111,7 @@ describe("a patient moves their own upcoming appointment (R32)", () => {
 });
 
 describe("one atomic operation (R33)", () => {
-  it("if the new slot is already taken the appointment is unchanged, and the next open slots are offered", async () => {
+  it("if the new slot is already taken the appointment is unchanged, and the nearest open slots are offered (spec 003 R3)", async () => {
     const other = await createPatient();
     await book(other.user.id, bookingBody(w.doctor.id, S1000));
     const before = await row();
@@ -120,7 +120,7 @@ describe("one atomic operation (R33)", () => {
     expect(result.status).toBe(409);
     expect(result.json.error.code).toBe("SLOT_TAKEN");
     expect(result.json.error.nextSlots?.map((slot) => slot.startsAt)).toEqual(
-      [S1030, S1100, S1130].map((slot) => slot.toISOString()),
+      [S0930, S1030, S1100].map((slot) => slot.toISOString()),
     );
     await expectUntouched(before);
     // The old slot was not released.
